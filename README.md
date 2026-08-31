@@ -50,10 +50,24 @@ webp/      результаты WebP
 ```bash
 ./encode-lossless.sh
 ./generate-report.sh
+./benchmark-encoding.sh
+./benchmark-decoding.sh
 ```
 
 - `encode-lossless.sh` — конвертирует исходники;
 - `generate-report.sh` — создаёт `compression-report.md` с группировкой по разрешению и типу изображения.
+- `benchmark-encoding.sh` — повторяет ту же конвертацию во временные файлы и создаёт `encoding-time-report.md`;
+- `benchmark-decoding.sh` — декодирует готовые AVIF и WebP и создаёт `decoding-time-report.md`.
+- `performance-report.md` — сводная таблица результатов кодирования и декодирования.
+
+Число прогонов задаётся переменной `RUNS`. По умолчанию кодирование выполняется один раз, а более быстрое декодирование — три раза:
+
+```bash
+RUNS=3 ./benchmark-encoding.sh
+RUNS=10 ./benchmark-decoding.sh
+```
+
+Время измеряется отдельно для каждого вызова FFmpeg. Оно включает запуск процесса, чтение входного файла и запись результата (для декодирования — в `null-output`), но не включает подготовку каталогов и создание Markdown-отчёта.
 
 Экономия AVIF в отчёте рассчитывается относительно WebP:
 

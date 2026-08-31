@@ -16,3 +16,47 @@
 Визуально на полном изображении заметной деградации у обоих форматов нет. У WebP фиксируется небольшое цветовое отклонение, особенно на иллюстрациях.
 
 JPEG и AVIF используют представление YUV 4:2:0. Lossless WebP декодируется в ARGB, поэтому при сравнении присутствуют различия цветового преобразования. Lossless в данном тесте относится к внутреннему кодированию формата и не означает полное совпадение RGB-пикселей с исходным JPEG.
+
+## Методика
+
+Для проверки выбрано по одному изображению из каждой комбинации разрешения и типа: всего 6 исходников. Каждый JPEG и соответствующие ему AVIF и WebP декодировались FFmpeg в PNG, после чего PNG сравнивались через ImageMagick.
+
+Пример для одной пары:
+
+```bash
+ffmpeg -v error -nostdin \
+  -i original/1920x1080/photo/01-alpine-lake.jpg \
+  -frames:v 1 /tmp/reference.png
+
+ffmpeg -v error -nostdin \
+  -i avif/1920x1080/photo/01-alpine-lake.avif \
+  -frames:v 1 /tmp/avif.png
+
+ffmpeg -v error -nostdin \
+  -i webp/1920x1080/photo/01-alpine-lake.webp \
+  -frames:v 1 /tmp/webp.png
+```
+
+PSNR рассчитывался относительно декодированного JPEG:
+
+```bash
+compare -metric PSNR /tmp/reference.png /tmp/avif.png null:
+compare -metric PSNR /tmp/reference.png /tmp/webp.png null:
+```
+
+Дополнительно проверялось количество различающихся пикселей (`AE`):
+
+```bash
+compare -metric AE /tmp/reference.png /tmp/avif.png null:
+compare -metric AE /tmp/reference.png /tmp/webp.png null:
+```
+
+Цветовое представление файлов проверялось через FFprobe:
+
+```bash
+ffprobe -v error -select_streams v:0 \
+  -show_entries stream=pix_fmt,color_range,color_space \
+  -of csv=p=0 IMAGE
+```
+
+PSNR измеряется в децибелах: большее значение означает меньшее отклонение от декодированного JPEG. Полное совпадение даёт бесконечный PSNR. Значения в таблице округлены до двух знаков после запятой.
